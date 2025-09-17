@@ -1,0 +1,90 @@
+name: Deploy Sitemaps
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'public/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+  schedule:
+    # Update sitemaps daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  generate-sitemaps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install axios cheerio xml2js
+
+      - name: Generate updated sitemaps
+        run: |
+          node scripts/generate-sitemaps.js
+
+      - name: Validate XML sitemaps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+          
+          # Basic XML validation
+          find public -name "*.xml" -exec xmllint --noout {} \;
+          
+          # Comprehensive sitemap validation
+          node scripts/validate-sitemaps.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: generate-sitemaps
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [generate-sitemaps, deploy]
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✅ Sitemaps deployed successfully"
+            echo "🔗 Available at: https://elevateforhumanity.github.io/Elevate-sitemap/"
+          else
+            echo "❌ Deployment failed"
+            exit 1
+          fi

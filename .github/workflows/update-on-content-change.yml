@@ -1,0 +1,88 @@
+name: Update Sitemaps on Content Change
+
+on:
+  repository_dispatch:
+    types: [content-updated]
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Source of the update'
+        required: false
+        default: 'manual'
+      urls_added:
+        description: 'Number of URLs added'
+        required: false
+        default: '0'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update-sitemaps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate updated sitemaps
+        run: |
+          echo "🔄 Updating sitemaps due to content change..."
+          echo "📝 Source: ${{ github.event.inputs.source || github.event.client_payload.source || 'webhook' }}"
+          node scripts/generate-sitemaps.js
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git add public/
+          if git diff --staged --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "📝 No sitemap changes detected"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Sitemap changes detected"
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Auto-update sitemaps: content change detected
+
+          Source: ${{ github.event.inputs.source || github.event.client_payload.source || 'webhook' }}
+          Timestamp: $(date -u)
+          
+          Co-authored-by: Ona <no-reply@ona.com>"
+          git push
+
+      - name: Trigger deployment
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-sitemaps.yml'
+            });
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.changes.outputs.changed }}" == "true" ]; then
+            echo "✅ Sitemaps updated and deployment triggered"
+          else
+            echo "📝 No updates needed - sitemaps are current"
+          fi
