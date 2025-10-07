@@ -1,0 +1,151 @@
+tasks:
+  - name: bootstrap-ecosystem
+    init: |
+      set -euo pipefail
+      
+      echo "🚀 Cloning Elevate for Humanity ecosystem repositories..."
+      
+      # Define repositories: <url>#<branch> <local-path> <purpose>
+      declare -A REPOS=(
+        ["https://github.com/elevateforhumanity/new-ecosystem#main"]="apps/lms|LMS Platform"
+        ["https://github.com/elevateforhumanity/ecosystem3#main"]="apps/marketing|Marketing Website"
+        ["https://github.com/elevateforhumanity/ecosystem2#main"]="apps/admin|Admin Dashboard"
+        ["https://github.com/elevateforhumanity/ecosystem-5#main"]="packages/shared|Shared Packages"
+        ["https://github.com/elevateforhumanity/Elevate-sitemap#main"]="tools/sitemap|Sitemap Generator"
+      )
+      
+      # Clone each repository
+      for repo_spec in "${!REPOS[@]}"; do
+        IFS='|' read -r path purpose <<< "${REPOS[$repo_spec]}"
+        url="${repo_spec%%#*}"
+        branch="${repo_spec##*#}"
+        
+        echo "📦 Cloning $purpose → $path"
+        mkdir -p "$(dirname "$path")"
+        
+        if [ -d "$path" ]; then
+          echo "  ⚠️  Directory exists, pulling latest..."
+          (cd "$path" && git pull)
+        else
+          git clone --depth=1 -b "$branch" "$url" "$path" || {
+            echo "  ❌ Failed to clone $url"
+            continue
+          }
+        fi
+        
+        echo "  ✅ $purpose ready"
+      done
+      
+      echo ""
+      echo "📊 Analyzing repository structures..."
+      
+      # Create analysis report
+      cat > STRUCTURE_ANALYSIS.md << 'EOF'
+      # Elevate for Humanity - Ecosystem Structure Analysis
+      
+      Generated: $(date)
+      
+      ## Repository Overview
+      
+      EOF
+      
+      for repo_spec in "${!REPOS[@]}"; do
+        IFS='|' read -r path purpose <<< "${REPOS[$repo_spec]}"
+        
+        if [ -d "$path" ]; then
+          echo "### $purpose (\`$path\`)" >> STRUCTURE_ANALYSIS.md
+          echo "" >> STRUCTURE_ANALYSIS.md
+          
+          # Check for package.json
+          if [ -f "$path/package.json" ]; then
+            echo "**Type:** $(jq -r '.name // "unknown"' "$path/package.json")" >> STRUCTURE_ANALYSIS.md
+            echo "" >> STRUCTURE_ANALYSIS.md
+            echo "**Dependencies:**" >> STRUCTURE_ANALYSIS.md
+            jq -r '.dependencies // {} | keys | .[]' "$path/package.json" | head -10 | sed 's/^/- /' >> STRUCTURE_ANALYSIS.md
+            echo "" >> STRUCTURE_ANALYSIS.md
+          fi
+          
+          # List key directories
+          echo "**Structure:**" >> STRUCTURE_ANALYSIS.md
+          find "$path" -maxdepth 2 -type d \( -name src -o -name components -o -name pages -o -name app -o -name public -o -name scripts \) 2>/dev/null | sed 's/^/- /' >> STRUCTURE_ANALYSIS.md || echo "- No standard structure found" >> STRUCTURE_ANALYSIS.md
+          echo "" >> STRUCTURE_ANALYSIS.md
+        fi
+      done
+      
+      echo "✅ Analysis complete - see STRUCTURE_ANALYSIS.md"
+      echo ""
+      
+      # Setup pnpm workspace
+      echo "📦 Setting up pnpm workspace..."
+      corepack enable
+      corepack prepare pnpm@latest --activate
+      
+      # Install dependencies across all repos
+      if [ -f "pnpm-workspace.yaml" ]; then
+        pnpm install --no-frozen-lockfile || {
+          echo "⚠️  Some dependencies failed to install - will continue"
+        }
+      fi
+      
+      echo ""
+      echo "✅ Bootstrap complete!"
+      echo ""
+      echo "📋 Next steps:"
+      echo "  1. Review STRUCTURE_ANALYSIS.md"
+      echo "  2. Run 'pnpm dev' to start all apps"
+      echo "  3. Check running services on their respective ports"
+      
+    command: |
+      echo ""
+      echo "🎯 Elevate for Humanity - Unified Development Environment"
+      echo ""
+      echo "Available commands:"
+      echo "  pnpm dev          - Start all applications"
+      echo "  pnpm build        - Build all applications"
+      echo "  pnpm lint         - Lint all code"
+      echo "  pnpm analyze      - Re-run structure analysis"
+      echo ""
+      echo "Repository structure:"
+      echo "  apps/lms          - Learning Management System"
+      echo "  apps/marketing    - Marketing Website"
+      echo "  apps/admin        - Admin Dashboard"
+      echo "  packages/shared   - Shared Components & Utils"
+      echo "  tools/sitemap     - Sitemap Generator"
+      echo ""
+      
+      # Keep terminal open
+      bash
+
+ports:
+  # LMS Platform
+  - port: 3000
+    onOpen: notify
+    name: LMS Platform
+    description: Learning Management System
+  
+  # Marketing Site
+  - port: 5173
+    onOpen: notify
+    name: Marketing Site
+    description: Public-facing website
+  
+  # Admin Dashboard
+  - port: 3001
+    onOpen: notify
+    name: Admin Dashboard
+    description: Admin tools and analytics
+  
+  # Shared Package Dev Server
+  - port: 6006
+    onOpen: ignore
+    name: Storybook
+    description: Component library (if using Storybook)
+
+vscode:
+  extensions:
+    - dbaeumer.vscode-eslint
+    - esbenp.prettier-vscode
+    - bradlc.vscode-tailwindcss
+    - ms-vscode.vscode-typescript-next
+    - usernamehw.errorlens
+    - christian-kohler.path-intellisense

@@ -68,3 +68,23 @@ logs
 # Temporary files
 tmp/
 temp/
+
+# Meta workspace specific
+.turbo
+.next/
+dist/
+out/
+pnpm-debug.log*
+
+# Cloned repositories (managed by Gitpod)
+apps/lms/
+apps/marketing/
+apps/admin/
+packages/shared/
+tools/sitemap/
+
+# Analysis reports
+STRUCTURE_ANALYSIS.json
+STRUCTURE_ANALYSIS.md
+DUPLICATES_REPORT.json
+DEDUPLICATION_PLAN.json

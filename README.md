@@ -1,4 +1,45 @@
-# Elevate for Humanity - Automated Sitemap System
+# Elevate for Humanity - Ecosystem Meta Workspace
+
+🚀 **Unified development environment for all Elevate for Humanity repositories**
+
+> This workspace automatically clones, links, and manages multiple repos (LMS, Marketing, Admin, Shared, Sitemap) as a single development environment.
+
+## 🎯 Quick Start
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/elevateforhumanity/Elevate-sitemap)
+
+The workspace will automatically:
+1. Clone all 5 repositories
+2. Set up pnpm workspace linking
+3. Analyze structure and find duplicates
+4. Prepare unified development environment
+
+## 📋 Available Commands
+
+```bash
+pnpm dev        # Start all applications in parallel
+pnpm build      # Build all applications
+pnpm lint       # Lint all code
+pnpm analyze    # Analyze repository structures
+pnpm dedupe     # Find duplicate files across repos
+pnpm organize   # Create deduplication plan
+```
+
+## 📁 Repository Structure
+
+- **apps/lms** - Learning Management System (port 3000)
+- **apps/marketing** - Marketing Website (port 5173)
+- **apps/admin** - Admin Dashboard (port 3001)
+- **packages/shared** - Shared components, utils, types
+- **tools/sitemap** - SEO sitemap generator
+
+## 📖 Documentation
+
+See [META_WORKSPACE_GUIDE.md](./META_WORKSPACE_GUIDE.md) for complete documentation.
+
+---
+
+# Original: Automated Sitemap System
 
 🚀 **Fully automated XML sitemap generation and deployment for elevateforhumanity.org**
 
