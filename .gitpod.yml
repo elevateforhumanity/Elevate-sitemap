@@ -6,12 +6,11 @@ tasks:
       echo "🚀 Cloning Elevate for Humanity ecosystem repositories..."
       
       # Define repositories: <url>#<branch> <local-path> <purpose>
+      # Note: LMS repository not yet available - add when created
       declare -A REPOS=(
-        ["https://github.com/elevateforhumanity/new-ecosystem#main"]="apps/lms|LMS Platform"
         ["https://github.com/elevateforhumanity/ecosystem3#main"]="apps/marketing|Marketing Website"
         ["https://github.com/elevateforhumanity/ecosystem2#main"]="apps/admin|Admin Dashboard"
         ["https://github.com/elevateforhumanity/ecosystem-5#main"]="packages/shared|Shared Packages"
-        ["https://github.com/elevateforhumanity/Elevate-sitemap#main"]="tools/sitemap|Sitemap Generator"
       )
       
       # Clone each repository
