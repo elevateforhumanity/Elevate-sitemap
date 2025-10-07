@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-
-# Sitemap locations
-Sitemap: https://sitemaps.elevateforhumanity.org/sitemap.xml
-Sitemap: https://elevateforhumanity.github.io/Elevate-sitemap/sitemap.xml
-
-# Generated automatically
