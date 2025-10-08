@@ -5,8 +5,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install express
-    startCommand: node server-simple.js
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
