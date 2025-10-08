@@ -1,12 +1,27 @@
 services:
-  # Full Stack - Backend + Frontend Together
+  # Static Site - HTML Pages Only (Working)
   - type: web
-    name: elevate-fullstack
+    name: elevate-site
     env: node
     region: oregon
     plan: free
-    buildCommand: cd backend && npm install && npx prisma generate && npm run build && cd .. && npm install
-    startCommand: cd backend && npx prisma migrate deploy && cd .. && node server-combined.js
+    buildCommand: npm install express
+    startCommand: node server-simple.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+
+  # Backend API (Separate Service)
+  - type: web
+    name: elevate-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npx prisma migrate deploy && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -20,8 +35,6 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: API_URL
-        value: https://elevate-fullstack.onrender.com
     healthCheckPath: /health
 
 databases:
