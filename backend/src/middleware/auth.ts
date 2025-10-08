@@ -2,13 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler';
 
-export interface AuthRequest extends Request {
+export type AuthRequest = Request & {
   user?: {
     id: string;
     email: string;
     role: string;
   };
-}
+};
 
 export const authenticate = (req: AuthRequest, _res: Response, next: NextFunction) => {
   try {
