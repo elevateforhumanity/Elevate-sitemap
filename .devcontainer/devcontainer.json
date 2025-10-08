@@ -1,45 +1,58 @@
 {
-	"name": "Elevate Ecosystem",
-	"image": "mcr.microsoft.com/devcontainers/javascript-node:24",
-	
-	"features": {
-		"ghcr.io/devcontainers-contrib/features/pnpm:2": {
-			"version": "8.15.0"
-		}
-	},
-	
-	"postCreateCommand": "bash .devcontainer/init.sh",
-	
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"dbaeumer.vscode-eslint",
-				"esbenp.prettier-vscode",
-				"bradlc.vscode-tailwindcss",
-				"ms-vscode.vscode-typescript-next",
-				"usernamehw.errorlens",
-				"christian-kohler.path-intellisense"
-			]
-		}
-	},
-	
-	"forwardPorts": [3000, 3001, 5173, 6006],
-	"portsAttributes": {
-		"3000": {
-			"label": "LMS Platform",
-			"onAutoForward": "notify"
-		},
-		"3001": {
-			"label": "Admin Dashboard",
-			"onAutoForward": "notify"
-		},
-		"5173": {
-			"label": "Marketing Site",
-			"onAutoForward": "notify"
-		},
-		"6006": {
-			"label": "Storybook",
-			"onAutoForward": "ignore"
-		}
-	}
+  "name": "elevate-react-app",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "hostRequirements": { 
+    "cpus": 2, 
+    "memory": "4gb", 
+    "storage": "32gb" 
+  },
+  "forwardPorts": [8012, 8080],
+  "portsAttributes": {
+    "8012": {
+      "label": "🚀 Development Server",
+      "onAutoForward": "openPreview",
+      "protocol": "https",
+      "visibility": "public"
+    },
+    "8080": {
+      "label": "📦 Production Preview",
+      "onAutoForward": "openPreview",
+      "protocol": "https",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "npm install -g pnpm@9.7.0 && pnpm install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.autoSave": "afterDelay",
+        "files.autoSaveDelay": 1000,
+        "editor.formatOnSave": true,
+        "npm.packageManager": "pnpm"
+      },
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "remoteEnv": {
+    "NODE_ENV": "development",
+    "PNPM_HOME": "/usr/local/share/pnpm",
+    "PATH": "${PNPM_HOME}:${PATH}"
+  }
 }
