@@ -2,10 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Using SQLite for local/dev. To switch to Postgres: change provider to "postgresql" and set DATABASE_URL.
+// Using Postgres with RLS for production security
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // For local dev, use: postgresql://postgres:postgres@localhost:5432/elevate_dev
 }
 
 model LmsOrganization {

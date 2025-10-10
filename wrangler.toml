@@ -44,7 +44,77 @@ value = "geolocation=(), microphone=(), camera=()"
 name = "Strict-Transport-Security"
 value = "max-age=31536000; includeSubDomains; preload"
 
+# Cloudflare Queues for background jobs
+[[queues.producers]]
+queue = "email-queue"
+binding = "EMAIL_QUEUE"
+
+[[queues.producers]]
+queue = "analytics-queue"
+binding = "ANALYTICS_QUEUE"
+
+[[queues.producers]]
+queue = "webhook-queue"
+binding = "WEBHOOK_QUEUE"
+
+[[queues.consumers]]
+queue = "email-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "email-dlq"
+
+[[queues.consumers]]
+queue = "analytics-queue"
+max_batch_size = 100
+max_batch_timeout = 60
+max_retries = 3
+
+[[queues.consumers]]
+queue = "webhook-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 5
+
+# Cron Triggers for scheduled tasks
+[triggers]
+crons = [
+  "0 0 * * *",    # Daily at midnight UTC - cleanup old data
+  "0 */6 * * *",  # Every 6 hours - sync analytics
+  "*/15 * * * *", # Every 15 minutes - process pending jobs
+]
+
+# Durable Objects for stateful operations
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+script_name = "elevateforhumanity"
+
+[[durable_objects.bindings]]
+name = "SESSION_STORE"
+class_name = "SessionStore"
+script_name = "elevateforhumanity"
+
+# KV Namespaces for caching
+[[kv_namespaces]]
+binding = "CACHE"
+id = "YOUR_KV_NAMESPACE_ID" # Replace with actual KV namespace ID
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "YOUR_SESSIONS_KV_ID" # Replace with actual KV namespace ID
+
+# R2 Buckets for file storage
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "elevate-uploads"
+
 # Environment variables (set via wrangler secret)
 # SUPABASE_URL
 # SUPABASE_ANON_KEY
+# SUPABASE_SERVICE_ROLE_KEY
 # STRIPE_PUBLIC_KEY
+# STRIPE_SECRET_KEY
+# STRIPE_WEBHOOK_SECRET
+# SENTRY_DSN
+# DATABASE_URL

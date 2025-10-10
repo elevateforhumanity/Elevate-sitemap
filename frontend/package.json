@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@sentry/react": "^7.99.0",
+    "@sentry/tracing": "^7.99.0",
+    "@supabase/supabase-js": "^2.39.3",
     "axios": "^1.12.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
