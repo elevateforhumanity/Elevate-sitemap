@@ -1,44 +1,30 @@
 services:
-  # Static Site - HTML Pages Only (Working)
+  # Static site for documentation
   - type: web
-    name: elevate-site
-    env: node
-    region: oregon
-    plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    name: elevate-credentialing-docs
+    env: static
+    buildCommand: echo "No build needed for static site"
+    staticPublishPath: ./docs
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: geolocation=(), microphone=(), camera=()
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-    healthCheckPath: /health
-
-  # Backend API (Separate Service)
-  - type: web
-    name: elevate-api
-    env: node
-    region: oregon
-    plan: free
-    buildCommand: cd backend && npm install && npx prisma generate && npm run build
-    startCommand: cd backend && npx prisma migrate deploy && npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 10000
-      - key: DATABASE_URL
-        fromDatabase:
-          name: elevate-db
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_REFRESH_SECRET
-        generateValue: true
-    healthCheckPath: /health
-
-databases:
-  - name: elevate-db
-    databaseName: elevate
-    user: elevate
-    plan: free
