@@ -14,9 +14,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('⚠️  Demo seeder is disabled - model names need updating');
   return;
-  
-  /* COMMENTED OUT UNTIL MODELS ARE FIXED
-  
+}
+
+/* COMMENTED OUT UNTIL MODELS ARE FIXED
+
 async function mainDisabled() {
   console.log('🌱 Seeding demo data...');
   console.log('========================');
@@ -216,7 +217,7 @@ async function mainDisabled() {
   console.log('');
 }
 
-main()
+mainDisabled()
   .catch((e) => {
     console.error('Error seeding data:', e);
     process.exit(1);
@@ -226,3 +227,13 @@ main()
   });
 
 */
+
+// Call the actual main function
+main()
+  .catch((e) => {
+    console.error('Error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

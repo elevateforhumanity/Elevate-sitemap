@@ -116,13 +116,13 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return;
   }
 
-  // Update order status
+  // Update payment status
   if (metadata?.orderId) {
     await prisma.payment.update({
       where: { id: metadata.orderId },
       data: {
-        status: 'PAID',
-        stripeSessionId: id,
+        status: 'succeeded',
+        stripePaymentId: id,
       },
     });
 
@@ -138,10 +138,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         create: {
           userId: metadata.userId,
           courseId: metadata.courseId,
-          status: 'ACTIVE',
         },
         update: {
-          status: 'ACTIVE',
+          // Enrollment exists, no update needed
         },
       });
     }
@@ -159,7 +158,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   if (metadata?.orderId) {
     await prisma.payment.update({
       where: { id: metadata.orderId },
-      data: { status: 'PAID' },
+      data: { status: 'succeeded' },
     });
   }
 
@@ -175,7 +174,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   if (metadata?.orderId) {
     await prisma.payment.update({
       where: { id: metadata.orderId },
-      data: { status: 'FAILED' },
+      data: { status: 'failed' },
     });
   }
 
@@ -200,14 +199,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const { id, metadata } = subscription;
 
   // Revoke access when subscription is cancelled
+  // Note: Enrollment model doesn't have status field, so we delete the enrollment
   if (metadata?.userId && metadata?.courseId) {
-    await prisma.enrollment.updateMany({
+    await prisma.enrollment.deleteMany({
       where: {
         userId: metadata.userId,
         courseId: metadata.courseId,
-      },
-      data: {
-        status: 'CANCELLED',
       },
     });
   }
