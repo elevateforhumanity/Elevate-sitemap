@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://elevateforhumanity.org/sitemap.xml
+Sitemap: https://elevateforhumanity.org/sitemap-index.xml
+
+# Block admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*.json$
