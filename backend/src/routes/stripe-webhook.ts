@@ -5,7 +5,7 @@ import { setAdminContext } from '../middleware/rls-context';
 
 const router = Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2023-10-16',
 });
 
 const prisma = new PrismaClient();
@@ -118,7 +118,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
   // Update order status
   if (metadata?.orderId) {
-    await prisma.lmsOrder.update({
+    await prisma.payment.update({
       where: { id: metadata.orderId },
       data: {
         status: 'PAID',
@@ -128,7 +128,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
     // Grant access to course if applicable
     if (metadata?.courseId && metadata?.userId) {
-      await prisma.lmsEnrollment.upsert({
+      await prisma.enrollment.upsert({
         where: {
           userId_courseId: {
             userId: metadata.userId,
@@ -157,7 +157,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   const { id, metadata } = paymentIntent;
 
   if (metadata?.orderId) {
-    await prisma.lmsOrder.update({
+    await prisma.payment.update({
       where: { id: metadata.orderId },
       data: { status: 'PAID' },
     });
@@ -173,7 +173,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   const { id, metadata } = paymentIntent;
 
   if (metadata?.orderId) {
-    await prisma.lmsOrder.update({
+    await prisma.payment.update({
       where: { id: metadata.orderId },
       data: { status: 'FAILED' },
     });
@@ -201,7 +201,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
   // Revoke access when subscription is cancelled
   if (metadata?.userId && metadata?.courseId) {
-    await prisma.lmsEnrollment.updateMany({
+    await prisma.enrollment.updateMany({
       where: {
         userId: metadata.userId,
         courseId: metadata.courseId,

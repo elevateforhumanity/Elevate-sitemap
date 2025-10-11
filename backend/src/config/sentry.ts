@@ -41,14 +41,16 @@ export const initSentry = (app: Express) => {
       }
       
       // Remove sensitive query params
-      if (event.request?.query_string) {
+      if (event.request?.query_string && typeof event.request.query_string === 'string') {
         const sensitiveParams = ['token', 'api_key', 'password', 'secret'];
         sensitiveParams.forEach(param => {
-          if (event.request?.query_string?.includes(param)) {
-            event.request.query_string = event.request.query_string.replace(
-              new RegExp(`${param}=[^&]*`, 'gi'),
-              `${param}=[REDACTED]`
-            );
+          if (event.request?.query_string && typeof event.request.query_string === 'string') {
+            if (event.request.query_string.includes(param)) {
+              event.request.query_string = event.request.query_string.replace(
+                new RegExp(`${param}=[^&]*`, 'gi'),
+                `${param}=[REDACTED]`
+              );
+            }
           }
         });
       }
@@ -88,7 +90,7 @@ export const initSentry = (app: Express) => {
 /**
  * Error handler middleware - must be added AFTER all routes
  */
-export const sentryErrorHandler = Sentry.Handlers.errorHandler({
+export const sentryErrorHandler: any = Sentry.Handlers.errorHandler({
   shouldHandleError(error) {
     // Capture all errors with status code >= 500
     return true;
