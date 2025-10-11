@@ -4,6 +4,9 @@
  */
 
 export interface Env {
+  // Static Assets
+  ASSETS: Fetcher;
+  
   // Queues (optional - uncomment when created)
   // EMAIL_QUEUE?: Queue;
   // ANALYTICS_QUEUE?: Queue;
@@ -37,18 +40,12 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     
-    // Rate limiting (disabled until Durable Object is created)
-    // if (env.RATE_LIMITER) {
-    //   const rateLimiterId = await getRateLimiterId(request);
-    //   const rateLimiter = env.RATE_LIMITER.get(rateLimiterId);
-    //   const isAllowed = await rateLimiter.fetch(request);
-    //   
-    //   if (!isAllowed.ok) {
-    //     return new Response('Rate limit exceeded', { status: 429 });
-    //   }
-    // }
+    // Handle sitemap requests
+    if (url.pathname === '/' || url.pathname === '/sitemap.xml') {
+      return handleSitemap(request, url);
+    }
     
-    // Route handling
+    // Handle API routes
     if (url.pathname.startsWith('/api/')) {
       return handleAPI(request, env, ctx);
     }
@@ -57,8 +54,8 @@ export default {
       return handleWebhook(request, env, ctx);
     }
     
-    // Serve static assets
-    return handleStatic(request, env, ctx);
+    // Serve static assets from dist/
+    return env.ASSETS.fetch(request);
   },
   
   /**
@@ -97,6 +94,43 @@ export default {
   //   }
   // },
 };
+
+/**
+ * Handle sitemap requests
+ */
+async function handleSitemap(request: Request, url: URL): Promise<Response> {
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://elevateforhumanity.org/</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://elevateforhumanity.org/courses</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://elevateforhumanity.org/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://elevateforhumanity.org/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>`;
+
+  return new Response(sitemap, {
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}
 
 /**
  * Handle API requests
@@ -147,13 +181,7 @@ async function handleWebhook(request: Request, env: Env, ctx: ExecutionContext):
   });
 }
 
-/**
- * Handle static asset requests
- */
-async function handleStatic(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-  // Implement static asset serving logic
-  return new Response('Static assets', { status: 200 });
-}
+// Static assets are now handled by env.ASSETS.fetch() in the main handler
 
 // Commented out until queues and Durable Objects are created
 // Uncomment these when you've created the resources in Cloudflare dashboard
