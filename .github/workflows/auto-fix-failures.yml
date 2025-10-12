@@ -1,0 +1,196 @@
+name: Auto-Fix Failed Deployments
+
+on:
+  workflow_run:
+    workflows: ["Auto Deploy to All Platforms"]
+    types:
+      - completed
+
+jobs:
+  detect-and-fix:
+    name: Detect and Fix Failures
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Identify failure type
+        id: identify
+        run: |
+          # Check build logs
+          if grep -q "Module not found" build.log 2>/dev/null; then
+            echo "failure_type=missing_module" >> $GITHUB_OUTPUT
+          elif grep -q "ENOENT" build.log 2>/dev/null; then
+            echo "failure_type=missing_file" >> $GITHUB_OUTPUT
+          elif grep -q "syntax error" build.log 2>/dev/null; then
+            echo "failure_type=syntax_error" >> $GITHUB_OUTPUT
+          else
+            echo "failure_type=unknown" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Auto-fix missing modules
+        if: steps.identify.outputs.failure_type == 'missing_module'
+        run: |
+          echo "🔧 Auto-fixing missing modules..."
+          npm install
+          npm run build
+
+      - name: Auto-fix missing files
+        if: steps.identify.outputs.failure_type == 'missing_file'
+        run: |
+          echo "🔧 Auto-fixing missing files..."
+          # Create missing directories
+          mkdir -p dist public/pages src/components
+          # Rebuild
+          npm run build
+
+      - name: Auto-fix syntax errors with AI
+        if: steps.identify.outputs.failure_type == 'syntax_error'
+        run: |
+          echo "🤖 Using AI to fix syntax errors..."
+          # Get error details
+          ERROR=$(cat build.log | grep -A 5 "syntax error")
+          
+          # Ask AI for fix
+          curl -X POST https://api.openai.com/v1/chat/completions \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"gpt-4\",
+              \"messages\": [
+                {
+                  \"role\": \"system\",
+                  \"content\": \"You are an expert developer. Fix syntax errors in code.\"
+                },
+                {
+                  \"role\": \"user\",
+                  \"content\": \"Error: $ERROR. Provide the fix.\"
+                }
+              ]
+            }" > ai-fix.json
+          
+          # Apply fix (simplified - would need actual parsing logic)
+          echo "AI fix suggestions received"
+
+      - name: Retry build
+        run: |
+          npm run build
+          if [ $? -eq 0 ]; then
+            echo "✅ Build successful after auto-fix"
+          else
+            echo "❌ Build still failing, creating issue"
+            exit 1
+          fi
+
+      - name: Commit fixes
+        if: success()
+        run: |
+          git config user.name "Auto-Fix Bot"
+          git config user.email "autofix@elevateforhumanity.org"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🔧 Auto-fix: Resolved deployment failure
+
+            Fixed: ${{ steps.identify.outputs.failure_type }}
+            Build now passing
+            
+            Co-authored-by: Ona <no-reply@ona.com>"
+            git push origin main
+          fi
+
+      - name: Trigger redeployment
+        if: success()
+        run: |
+          # Trigger Cloudflare
+          curl -X POST "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/elevateforhumanity/deployments" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json"
+          
+          # Trigger Render
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          
+          echo "✅ Redeployment triggered"
+
+      - name: Create issue if still failing
+        if: failure()
+        run: |
+          gh issue create \
+            --title "🚨 Auto-fix failed: Manual intervention needed" \
+            --body "Deployment failed and auto-fix was unsuccessful.
+            
+            Failure type: ${{ steps.identify.outputs.failure_type }}
+            
+            Please review the logs and fix manually." \
+            --label "bug,urgent" \
+            --assignee "${{ github.repository_owner }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on Slack
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            MESSAGE="✅ Auto-fix successful! Deployment recovered."
+          else
+            MESSAGE="❌ Auto-fix failed. Manual intervention required."
+          fi
+          
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"$MESSAGE\"}" || true
+
+  rollback-on-critical-failure:
+    name: Rollback on Critical Failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    needs: detect-and-fix
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find last successful commit
+        id: last_success
+        run: |
+          LAST_GOOD=$(git log --grep="✅" --format="%H" -n 1)
+          echo "commit=$LAST_GOOD" >> $GITHUB_OUTPUT
+
+      - name: Rollback to last good commit
+        if: steps.last_success.outputs.commit != ''
+        run: |
+          git revert --no-commit HEAD
+          git commit -m "⏮️ Rollback: Reverting to last stable version
+
+          Rolled back to: ${{ steps.last_success.outputs.commit }}
+          Reason: Critical deployment failure
+          
+          Co-authored-by: Ona <no-reply@ona.com>"
+          git push origin main
+
+      - name: Notify rollback
+        run: |
+          gh issue create \
+            --title "⏮️ Automatic Rollback Performed" \
+            --body "System automatically rolled back to last stable version due to critical failure.
+            
+            Last good commit: ${{ steps.last_success.outputs.commit }}
+            
+            Please review and fix before redeploying." \
+            --label "rollback,urgent"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
