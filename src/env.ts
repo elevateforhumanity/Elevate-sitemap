@@ -33,7 +33,7 @@ export function loadEnv(): AppEnv {
 }
 
 // Allow running standalone via: npm run env:check
-if (require.main === module) {
+if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
   loadEnv();
   // eslint-disable-next-line no-console
   console.log('✅ Environment variables validated');
