@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: dev",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "detail": "Start development server"
+    },
+    {
+      "label": "npm: build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": [],
+      "detail": "Build for production"
+    },
+    {
+      "label": "npm: preview",
+      "type": "npm",
+      "script": "preview",
+      "problemMatcher": [],
+      "detail": "Preview production build"
+    },
+    {
+      "label": "npm: lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "detail": "Run ESLint"
+    },
+    {
+      "label": "npm: format",
+      "type": "npm",
+      "script": "format",
+      "problemMatcher": [],
+      "detail": "Format code with Prettier"
+    }
+  ]
+}

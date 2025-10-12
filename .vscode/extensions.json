@@ -1,0 +1,35 @@
+{
+  "recommendations": [
+    // GitHub Copilot (AI pair programming)
+    "github.copilot",
+    "github.copilot-chat",
+    
+    // Code Quality
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    
+    // React & TypeScript
+    "dsznajder.es7-react-js-snippets",
+    "ms-vscode.vscode-typescript-next",
+    
+    // Tailwind CSS
+    "bradlc.vscode-tailwindcss",
+    
+    // Git
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    
+    // Utilities
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "naumovs.color-highlight",
+    "streetsidesoftware.code-spell-checker",
+    
+    // Markdown
+    "yzhang.markdown-all-in-one",
+    
+    // Docker & DevContainers
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers"
+  ]
+}
