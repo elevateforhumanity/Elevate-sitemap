@@ -9,7 +9,7 @@
   "packageManager": "pnpm@9.7.0",
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@sentry/react": "^7.99.0",
+    "@sentry/react": "^10.19.0",
     "@sentry/tracing": "^7.99.0",
     "@supabase/supabase-js": "2.57.4",
     "@vitejs/plugin-react": "4.7.0",
